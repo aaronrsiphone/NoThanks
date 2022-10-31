@@ -7,6 +7,12 @@ N_PLAYERS = 4
 
 
 class Player:
+    """
+    This is the base class for players in the game.
+
+    This particular player makes decisions randomly, but new player strategies can be 
+    implementing the decide() function.
+    """
 
     def __init__(self, n_tokens, player_number):
         self.hand = []
@@ -23,6 +29,9 @@ class Player:
             s += " {}".format(seq)
 
         return s
+
+    def decide(self):
+        pass
 
     def has_neighbor(c):
         # checks if c will make a sequence with an existing card in hand. 
