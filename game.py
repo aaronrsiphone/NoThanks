@@ -16,7 +16,7 @@ class Player:
 
     def __init__(self, n_tokens, player_number):
         self.hand = []
-        self.tokens = n_tokens
+        self._tokens = n_tokens
         self.player_number = player_number
         self.last_score = -1* n_tokens
 
@@ -24,11 +24,31 @@ class Player:
 
         s = "Player: {}".format(self.player_number)
         s += "  Tokens: {}".format(self.tokens)
-        s += "  Score: {}".format(self.calc_score())
+        s += "  Score: {}".format(self.score)
         for seq in self.get_sequences():
             s += " {}".format(seq)
 
         return s
+
+    @property
+    def score(self):
+        sequences = self.get_sequences()
+        score = 0 
+        for seq in sequences:
+            score += seq[0]
+
+        return score - self.tokens
+
+    @property 
+    def tokens(self):
+        return self._tokens
+
+    @tokens.setter
+    def tokens(self, new_tokens):
+        if new_tokens >= 0:
+            self._tokens = new_tokens
+        else:
+            raise ValueError("User cannot have have negative tokens")
 
     def decide(self):
         pass
