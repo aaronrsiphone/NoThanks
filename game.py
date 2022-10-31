@@ -20,7 +20,7 @@ class Player:
         s += "  Tokens: {}".format(self.tokens)
         s += "  Score: {}".format(self.calc_score())
         for seq in self.get_sequences():
-            s += str(seq)
+            s += " {}".format(seq)
 
         return s
 
@@ -159,6 +159,10 @@ class Game:
         new_score = player.calc_score()
         return old_score - new_score
 
+    def play_random_game(self):
+        while self.deck.has_cards():
+            n = random.randint(-1, 1)
+            self.player_action(n)
 
 if __name__ == '__main__':
     input("Ready?")
@@ -168,7 +172,3 @@ if __name__ == '__main__':
         print(p)
     game_state = game.get_state()
     
-    print(encode_state(game_state))
-    
-
-
