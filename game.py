@@ -14,6 +14,16 @@ class Player:
         self.player_number = player_number
         self.last_score = -1* n_tokens
 
+    def __str__(self):
+
+        s = "Player: {}".format(self.player_number)
+        s += "  Tokens: {}".format(self.tokens)
+        s += "  Score: {}".format(self.calc_score())
+        for seq in self.get_sequences():
+            s += str(seq)
+
+        return s
+
     def has_neighbor(c):
         # checks if c will make a sequence with an existing card in hand. 
         return (c - 1) in self.hand or (c + 1) in self.hand
@@ -42,14 +52,6 @@ class Player:
 
         return sequences
 
-    def print_info(self):
-        print("Player: ", self.player_number)
-        for s in self.get_sequences():
-            print("  ", s)
-        print(f"  Tokens: {self.tokens}")
-        print(f"  Score: {self.calc_score()}")
-
-    
     def get_state(self):
 
         state = {
@@ -163,7 +165,7 @@ if __name__ == '__main__':
     game = Game(N_PLAYERS)
     winner = game.play_random_game()
     for p in game.players:
-        p.print_info()
+        print(p)
     game_state = game.get_state()
     
     print(encode_state(game_state))
