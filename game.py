@@ -2,10 +2,6 @@ import random
 from itertools import groupby
 from operator import itemgetter
 
-
-N_PLAYERS = 4
-
-
 class Player:
     """
     This is the base class for players in the game.
@@ -50,8 +46,18 @@ class Player:
         else:
             raise ValueError("User cannot have have negative tokens")
 
-    def decide(self):
-        pass
+    def decide(self, game_state):
+        """
+        Function to decide if the player should take the card
+
+        Return True to take the card
+
+        Return False to say "No Thanks!"
+        """
+        n = random.randint(-1, 1)
+        if n < 0:
+            return False
+        return True
 
     def has_neighbor(c):
         # checks if c will make a sequence with an existing card in hand. 
@@ -97,6 +103,20 @@ class Player:
             self.tokens -= 1
         else:
             raise ValueError("User cannot have have negative tokens")
+
+class Human(Player):
+
+    def decide(self, game_state):
+
+        print(game_state)
+
+        choice = input("Do you want to take the card?")
+
+        if choice.lower() in ["yes", "y", "true", "1"]:
+            return True
+
+        elif choice.lower() in ["no", "n", "false", "0"]:
+            return False
         
     
 class Deck:
@@ -133,24 +153,10 @@ class Deck:
 
 class Game:
 
-    def __init__(self, n_players=4):
+    def __init__(self, players=[]):
 
-        # Player Setup
-        if 3 > n_players > 7:
-            return Error("Player count must be between 3 and 7 inclusive. You provided {}".format(n_players))
-        
-        self.n_players = n_players
-        self.players = []
-        ptot = {
-            3:11,
-            4:11,
-            5:11,
-            6:9,
-            7:7
-        }
-
-        for i in range(0, self.n_players):
-            self.players.append(Player(ptot[n_players], i))
+        self.players = players
+        self.n_players = len(self.players)
         
         # deck setup
         self.deck = Deck()
@@ -175,28 +181,46 @@ class Game:
         }
         return state
     
-    def player_action(self, choice):
+    def player_action(self):
+        """
+        Function to allow the player to take an action
+
+        Parameters
+        ----------
+        choice: Boolean
+            If True, the player takes the card.
+            If False, the player says "No Thanks!"
+        """
+
+        # Get the player whose turn it is
         player = self.players[self.get_turn_index()]
-        old_score = player.calc_score()
-        if choice >= 0:
+        # Ask the player what they want to do
+        choice = player.decide(self.get_state())
+
+        # The player decides to take the card
+        if choice:
             card, tokens = self.deck.take_card()
             player.add_card_and_tokens(card, tokens)
+        # The player says "No Thanks!"
         else:
             player.tokens -= 1
             self.deck.no_thanks()
             self.turn_counter +=1
-        new_score = player.calc_score()
-        return old_score - new_score
 
-    def play_random_game(self):
+    def play_game(self):
         while self.deck.has_cards():
-            n = random.randint(-1, 1)
-            self.player_action(n)
+            self.player_action()
 
 if __name__ == '__main__':
     input("Ready?")
-    game = Game(N_PLAYERS)
-    winner = game.play_random_game()
+    
+    p1 = Player(11, 1)
+    p2 = Player(11, 2)
+    p3 = Player(11, 3)
+    p4 = Human(11, 4)
+
+    game = Game(players = [p1, p2, p3, p4])
+    winner = game.play_game()
     for p in game.players:
         print(p)
     game_state = game.get_state()
