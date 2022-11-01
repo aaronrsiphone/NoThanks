@@ -64,11 +64,6 @@ class Player:
         """
         return (c - 1) in self.hand or (c + 1) in self.hand
 
-    def add_card_and_tokens(self, card, tokens):
-        self.last_score = self.calc_score()
-        self.hand.append(card)
-        self.tokens += tokens
-
     def get_sequences(self,c=None):
         
         test_hand = [h for h in self.hand]
@@ -200,7 +195,8 @@ class Game:
         # The player decides to take the card
         if choice:
             card, tokens = self.deck.take_card()
-            player.add_card_and_tokens(card, tokens)
+            player.hand.append(card)
+            player.tokens += tokens
         # The player says "No Thanks!"
         else:
             player.tokens -= 1
