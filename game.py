@@ -10,11 +10,11 @@ class Player:
     but new player strategies can be implementing the decide() function.
     """
 
-    def __init__(self, n_tokens, player_number):
+    def __init__(self, player_number):
+        # Set up empty hand
         self.hand = []
-        self._tokens = n_tokens
+        # Store player number
         self.player_number = player_number
-        self.last_score = -1* n_tokens
 
     def __str__(self):
         s = "Player: {}".format(self.player_number)
@@ -81,8 +81,7 @@ class Player:
         state = {
             "hand": self.hand.copy(),
             "tokens" : self.tokens,
-            "score" : self.calc_score(),
-            "score_delta": self.calc_score() - self.last_score
+            "score" : self.score,
         }
         return state
 
@@ -96,7 +95,6 @@ class Human(Player):
             return True
         elif choice.lower() in ["no", "n", "false", "0"]:
             return False
-        
     
 class Deck:
     """
@@ -128,7 +126,6 @@ class Deck:
     def take_card(self):
         tokens = self.tokens
         card = self.deck.pop()
-
         self.tokens = 0
         self.taken.append(card)
         return (card, tokens)
@@ -139,30 +136,31 @@ class Game:
     """
 
     def __init__(self, players=[]):
-
+        # Make a list of all the players
         self.players = players
+        # Count the number of players
         self.n_players = len(self.players)
-        
-        # deck setup
+        # Deck setup
         self.deck = Deck()
-        self.current_player_index = 0
+        # Set up Turn Counter
         self.turn_counter = 0
 
-        self.game_log = []
-
-    def get_turn_index(self):
+        # Deal tokens to all the players
+        n_tokens = {3:11, 4:11, 5:11, 6:9, 7:7}
+        for player in self.players:
+            player.tokens = n_tokens[self.n_players]
+                
+    @property
+    def turn(self):
         return self.turn_counter%self.n_players
 
     def get_state(self):
-        player_scores = [(p.player_number, p.calc_score()) for p in self.players]
-        player_scores.sort(key=lambda x : x[1])
 
         state = {
-            "flipped_card" : self.deck.get_flipped(),
+            "flipped_card" : self.deck.flipped_card,
             "tokens_on_card": self.deck.tokens,
             "player_states" : [p.get_state() for p in self.players],
-            "player_positions" : [p[0] for p in player_scores],
-            "player_turn_index" : self.get_turn_index()
+            "player_turn_index" : self.turn
         }
         return state
     
@@ -178,7 +176,7 @@ class Game:
         """
 
         # Get the player whose turn it is
-        player = self.players[self.get_turn_index()]
+        player = self.players[self.turn]
         # Ask the player what they want to do
         choice = player.decide(self.get_state())
 
@@ -190,22 +188,22 @@ class Game:
         # The player says "No Thanks!"
         else:
             player.tokens -= 1
-            self.deck..tokens += 1
+            self.deck.tokens += 1
             self.turn_counter += 1
 
     def play_game(self):
-        while self.deck.has_cards():
+        while self.deck.has_cards:
             self.player_action()
 
 if __name__ == '__main__':
     input("Ready?")
     
-    p1 = Player(11, 1)
-    p2 = Player(11, 2)
-    p3 = Player(11, 3)
-    p4 = Human(11, 4)
+    p1 = Player(1)
+    p2 = Player(2)
+    p3 = Player(3)
+    p4 = Human(4)
 
-    game = Game(players = [p1, p2, p3, p4])
+    game = Game(players=[p1, p2, p3, p4])
     winner = game.play_game()
     for p in game.players:
         print(p)
