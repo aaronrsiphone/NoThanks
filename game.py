@@ -45,6 +45,15 @@ class Player:
         else:
             raise ValueError("User cannot have have negative tokens")
 
+    @property 
+    def state(self):
+        d = {
+            "hand": self.hand.copy(),
+            "tokens" : self.tokens,
+            "score" : self.score,
+        }
+        return d
+
     def decide(self, game_state):
         """
         Function to decide if the player should take the card
@@ -75,15 +84,6 @@ class Player:
             sequences.append(sorted(list(map(itemgetter(1), g))))
 
         return sequences
-
-    def get_state(self):
-
-        state = {
-            "hand": self.hand.copy(),
-            "tokens" : self.tokens,
-            "score" : self.score,
-        }
-        return state
 
 class Human(Player):
 
@@ -154,15 +154,15 @@ class Game:
     def turn(self):
         return self.turn_counter%self.n_players
 
-    def get_state(self):
-
-        state = {
+    @property
+    def state(self):
+        d = {
             "flipped_card" : self.deck.flipped_card,
             "tokens_on_card": self.deck.tokens,
-            "player_states" : [p.get_state() for p in self.players],
+            "player_states" : [p.state for p in self.players],
             "player_turn_index" : self.turn
         }
-        return state
+        return d
     
     def player_action(self):
         """
@@ -207,5 +207,5 @@ if __name__ == '__main__':
     winner = game.play_game()
     for p in game.players:
         print(p)
-    game_state = game.get_state()
+    game_state = game.state
     
