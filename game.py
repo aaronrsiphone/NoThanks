@@ -64,14 +64,6 @@ class Player:
         """
         return (c - 1) in self.hand or (c + 1) in self.hand
 
-    def calc_score(self, test_card=None):
-        Calculates current 
-        sequences = self.get_sequences(test_card)
-        score = 0
-        for s in sequences:
-            score += s[0]
-        return score - self.tokens
-    
     def add_card_and_tokens(self, card, tokens):
         self.last_score = self.calc_score()
         self.hand.append(card)
