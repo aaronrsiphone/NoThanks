@@ -91,12 +91,9 @@ class Human(Player):
     def decide(self, game_state):
 
         print(game_state)
-
         choice = input("Do you want to take the card?")
-
         if choice.lower() in ["yes", "y", "true", "1"]:
             return True
-
         elif choice.lower() in ["no", "n", "false", "0"]:
             return False
         
@@ -106,16 +103,24 @@ class Deck:
     Class for the deck of cards in the game No Thanks
     """
     def __init__(self):
+        # Create a deck with cards 3 through 35
         deck = list(range(3,36))
+        # Shuffle the Deck
         random.shuffle(deck)
+        # Discard the last nine cards
         self.deck = deck[:-9]
-        self.dropped = deck[-9:]
+        # Start out the card with 0 tokens
+        self.tokens = 0
+        # Make an array for cards that were all ready taken
         self.taken = []
 
-        self.tokens = 0
-    
-    def get_flipped(self):
-        if self.has_cards():
+    @property
+    def has_cards(self):
+        return len(self.deck) > 0
+
+    @property
+    def flipped_card(self):
+        if self.has_cards:
             return self.deck[-1]
         else:
             return 0
@@ -127,15 +132,7 @@ class Deck:
         self.tokens = 0
         self.taken.append(card)
         return (card, tokens)
-
-    def has_cards(self):
-        return len(self.deck) > 0
     
-    def no_thanks(self):
-        self.tokens += 1
-    
-
-
 class Game:
     """
     Class for the Game of No Thanks, contains all of the rules and actions
@@ -193,8 +190,8 @@ class Game:
         # The player says "No Thanks!"
         else:
             player.tokens -= 1
-            self.deck.no_thanks()
-            self.turn_counter +=1
+            self.deck..tokens += 1
+            self.turn_counter += 1
 
     def play_game(self):
         while self.deck.has_cards():
