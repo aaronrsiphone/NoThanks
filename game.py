@@ -4,10 +4,10 @@ from operator import itemgetter
 
 class Player:
     """
-    This is the base class for players in the game.
+    Base class for players in the game No Thanks.
 
-    This particular player makes decisions randomly, but new player strategies can be 
-    implementing the decide() function.
+    This particular player makes decisions randomly, 
+    but new player strategies can be implementing the decide() function.
     """
 
     def __init__(self, n_tokens, player_number):
@@ -17,7 +17,6 @@ class Player:
         self.last_score = -1* n_tokens
 
     def __str__(self):
-
         s = "Player: {}".format(self.player_number)
         s += "  Tokens: {}".format(self.tokens)
         s += "  Score: {}".format(self.score)
@@ -60,10 +59,13 @@ class Player:
         return True
 
     def has_neighbor(c):
-        # checks if c will make a sequence with an existing card in hand. 
+        """
+        checks if c will make a sequence with an existing card in hand. 
+        """
         return (c - 1) in self.hand or (c + 1) in self.hand
 
     def calc_score(self, test_card=None):
+        Calculates current 
         sequences = self.get_sequences(test_card)
         score = 0
         for s in sequences:
@@ -120,6 +122,9 @@ class Human(Player):
         
     
 class Deck:
+    """
+    Class for the deck of cards in the game No Thanks
+    """
     def __init__(self):
         deck = list(range(3,36))
         random.shuffle(deck)
@@ -152,6 +157,9 @@ class Deck:
 
 
 class Game:
+    """
+    Class for the Game of No Thanks, contains all of the rules and actions
+    """
 
     def __init__(self, players=[]):
 
