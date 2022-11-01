@@ -85,13 +85,6 @@ class Player:
             "score_delta": self.calc_score() - self.last_score
         }
         return state
-    
-    def no_thanks():
-        if self.tokens > 0:
-            self.last_score = self.calc_score()
-            self.tokens -= 1
-        else:
-            raise ValueError("User cannot have have negative tokens")
 
 class Human(Player):
 
