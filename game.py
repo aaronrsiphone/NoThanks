@@ -20,6 +20,7 @@ class Player:
         s = "Player: {}".format(self.player_number)
         s += "  Tokens: {}".format(self.tokens)
         s += "  Score: {}".format(self.score)
+        s += " Hand: "
         for seq in self.get_sequences():
             s += " {}".format(seq)
 
@@ -95,6 +96,15 @@ class Human(Player):
             return True
         elif choice.lower() in ["no", "n", "false", "0"]:
             return False
+
+class Denier(Player):
+    """
+    This player will always say "No Thanks" if able
+    """
+    def decide(self, _):
+        if self.tokens > 0:
+            return False
+        return True
     
 class Deck:
     """
@@ -178,7 +188,7 @@ class Game:
         # Get the player whose turn it is
         player = self.players[self.turn]
         # Ask the player what they want to do
-        choice = player.decide(self.get_state())
+        choice = player.decide(self.state)
 
         # The player decides to take the card
         if choice:
@@ -198,9 +208,9 @@ class Game:
 if __name__ == '__main__':
     input("Ready?")
     
-    p1 = Player(1)
-    p2 = Player(2)
-    p3 = Player(3)
+    p1 = Denier(1)
+    p2 = Denier(2)
+    p3 = Denier(3)
     p4 = Human(4)
 
     game = Game(players=[p1, p2, p3, p4])
