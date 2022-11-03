@@ -187,11 +187,13 @@ class Game:
 
         # Get the player whose turn it is
         player = self.players[self.turn]
+
         # Ask the player what they want to do
         choice = player.decide(self.state)
 
-        # The player decides to take the card
-        if choice:
+        # The player decides to take the card,
+        # or is forced to because they don't have any tokens
+        if choice or (player.tokens == 0):
             card, tokens = self.deck.take_card()
             player.hand.append(card)
             player.tokens += tokens
