@@ -87,7 +87,9 @@ class Player:
         return sequences
 
 class Human(Player):
-
+    """
+    This Player allows a human to play against the computers
+    """
     def decide(self, game_state):
 
         print(game_state)
@@ -102,9 +104,30 @@ class Denier(Player):
     This player will always say "No Thanks" if able
     """
     def decide(self, _):
-        if self.tokens > 0:
-            return False
-        return True
+        if self.tokens < 0:
+            return True
+
+        return False
+
+class Basic_math(Player):
+    """
+    This player inputs a threshold that is used to make a basic calculation.
+
+    If the value of the card minus the tokens on the card is less than a value
+    then the card will be taken
+    """
+
+    def __init__(self, player_number, threshold):
+        super().__init__(player_number)
+        self.threshold = threshold
+
+    def decide(self, state):
+        if self.tokens < 0:
+            return True
+        if state['flipped_card'] - state['tokens_on_card'] < self.threshold:
+            return True
+
+        return False
     
 class Deck:
     """
@@ -208,12 +231,11 @@ class Game:
             self.player_action()
 
 if __name__ == '__main__':
-    input("Ready?")
     
     p1 = Denier(1)
     p2 = Denier(2)
-    p3 = Denier(3)
-    p4 = Human(4)
+    p3 = Basic_math(3, 5)
+    p4 = Basic_math(4, 0)
 
     game = Game(players=[p1, p2, p3, p4])
     winner = game.play_game()
