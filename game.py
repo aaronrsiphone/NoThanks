@@ -11,26 +11,25 @@ class Player:
     """
 
     def __init__(self, player_number):
-        # Set up empty hand
+        # set up empty hand
         self.hand = []
-        # Store player number
+        # store player number
         self.player_number = player_number
 
     def __str__(self):
-        s = "Player: {}".format(self.player_number)
-        s += "  Tokens: {}".format(self.tokens)
-        s += "  Score: {}".format(self.score)
-        s += " Hand: "
-        for seq in self.get_sequences():
+        s = "player: {}".format(self.player_number)
+        s += "  tokens: {}".format(self.tokens)
+        s += "  score: {}".format(self.score)
+        s += " hand: "
+        for seq in self.sequences:
             s += " {}".format(seq)
 
         return s
 
     @property
     def score(self):
-        sequences = self.get_sequences()
         score = 0 
-        for seq in sequences:
+        for seq in self.sequences:
             score += seq[0]
 
         return score - self.tokens
@@ -44,7 +43,20 @@ class Player:
         if new_tokens >= 0:
             self._tokens = new_tokens
         else:
-            raise ValueError("User cannot have have negative tokens")
+            raise valueerror("user cannot have have negative tokens")
+    
+    @property
+    def sequences(self):
+        """
+        Returns the hand sorted by sequences
+        """
+        test_hand = self.hand.copy()
+        test_hand.sort()
+        sequences = []
+        for k, g in groupby(enumerate(test_hand), lambda i_x: i_x[0] - i_x[1]):
+            sequences.append(sorted(list(map(itemgetter(1), g))))
+
+        return sequences
 
     @property 
     def state(self):
@@ -59,32 +71,14 @@ class Player:
         """
         Function to decide if the player should take the card
 
-        Return True to take the card
+        Return true to take the card
 
-        Return False to say "No Thanks!"
+        Return false to say "no thanks!"
         """
         n = random.randint(-1, 1)
         if n < 0:
-            return False
-        return True
-
-    def has_neighbor(c):
-        """
-        checks if c will make a sequence with an existing card in hand. 
-        """
-        return (c - 1) in self.hand or (c + 1) in self.hand
-
-    def get_sequences(self,c=None):
-        
-        test_hand = [h for h in self.hand]
-        if c:
-            test_hand.append(c)
-        test_hand.sort()
-        sequences = []
-        for k, g in groupby(enumerate(test_hand), lambda i_x: i_x[0] - i_x[1]):
-            sequences.append(sorted(list(map(itemgetter(1), g))))
-
-        return sequences
+            return false
+        return true
 
 class Human(Player):
     """
