@@ -10,10 +10,13 @@ class Player:
     but new player strategies can be implementing the decide() function.
     """
 
-    def __init__(self, player_number):
+    def __init__(self):
         # set up empty hand
         self.hand = []
         # store player number
+        
+    
+    def assign_position(self, player_number):
         self.player_number = player_number
 
     def __str__(self):
@@ -43,7 +46,7 @@ class Player:
         if new_tokens >= 0:
             self._tokens = new_tokens
         else:
-            raise valueerror("user cannot have have negative tokens")
+            raise ValueError("user cannot have have negative tokens")
     
     @property
     def sequences(self):
@@ -131,8 +134,8 @@ class Basic_math(Player):
     then the card will be taken
     """
 
-    def __init__(self, player_number, threshold):
-        super().__init__(player_number)
+    def __init__(self, threshold):
+        super().__init__()
         self.threshold = threshold
 
     def decide(self, state):
@@ -166,11 +169,10 @@ class Net_score(Basic_math):
 class AaronsRules(Player):
 
     def __init__(self, 
-                player_number, 
                 auto_take_threshold=5,
                 general_threshold=5):
 
-        super().__init__(player_number)
+        super().__init__()
         self.auto_take_threshold = auto_take_threshold
         self.general_threshold = general_threshold
         
@@ -179,7 +181,9 @@ class AaronsRules(Player):
 
         if not hand:
             hand = self.hand
-        return (c - 1) in hand or (c + 1) in hand
+        one = (c - 1) in hand
+        two = (c + 1) in hand
+        return  one or two
 
     def decide(self, state):
          # Returning -1 is Nothanks
@@ -187,11 +191,9 @@ class AaronsRules(Player):
         
         # if you dont have any tokes, take it
         if self.tokens == 0:
-            return 1
+            return True
 
         card = state['flipped_card']
-        if card < self.auto_take_threshold:
-            return 1
         
         valuable = self.will_make_sequence(card)
         valuable_to_others = False
@@ -207,19 +209,19 @@ class AaronsRules(Player):
         if valuable:
             # if valuable to you and others, take it first. 
             if valuable_to_others:
-                return 1
+                return True
             # if there is a risk others will take it on the next go around, take it early
-            if card - state['tokens_on_card'] - number_of_players < self.general_threshold:
-                return 1
+            if card - state['tokens_on_card'] + number_of_players < self.general_threshold:
+                return True
             else:
                 # if valuable only to you, let it ride twice. 
-                if state['tokens_on_card'] >= let_it_ride_token_max:
-                    return 1
-        # If value of card minus n tokens on card is less than a threshold, take it.
-        elif card - state['tokens_on_card'] < self.general_threshold:
-            return 1
+                if card-state['tokens_on_card'] >= let_it_ride_token_max:
+                    return True
+        else:
+            if card - state['tokens_on_card'] < self.auto_take_threshold:
+                return True
 
-        return -1
+        return False
 
     
 class Deck:
@@ -263,7 +265,11 @@ class Game:
 
     def __init__(self, players=[]):
         # Make a list of all the players
+        
         self.players = players
+        for i in range(len(players)):
+            self.players[i].assign_position(i)
+
         # Count the number of players
         self.n_players = len(self.players)
         # Deck setup
@@ -321,28 +327,40 @@ class Game:
 
     def play_game(self):
         while self.deck.has_cards:
-            for p in self.players:
-                print(p)
             self.player_action()
-            print(self.deck.deck)
         
         player_scores = [(p.player_number, p.score) for p in game.players]
         player_scores.sort(key=lambda x : x[1])
         
-        return player_scores[0][0]
+        return self.players[player_scores[0][0]]
 
 if __name__ == '__main__':
     
-    p1 = Denier(0)
-    p2 = Basic_math(1, 10)
-    p3 = Net_score(2, 3)
-    p4 = AaronsRules(3, 5,5)
+    win_count_by_player_class = {}
 
-    winners = [0,0,0,0]
-    for _ in range(1):
-        game = Game(players=[p1, p2, p3,p4])
+    for index in range(10000):
+        # if (index+1)%100 == 0:
+            # print(index)
+            # print(win_count_by_player_class)
+        
+
+        players = [
+            Denier(),
+            Basic_math(9),
+            Net_score(9),
+            AaronsRules(9,9)
+        ]
+        random.shuffle(players)
+        game = Game(players=players)
         winner = game.play_game()
-        winners[winner] += 1
+        winning_class = winner.__class__.__name__
+
+        if winning_class in win_count_by_player_class:
+            win_count_by_player_class[winning_class] += 1
+        else:
+            win_count_by_player_class[winning_class] = 1
     
-    print(winners)
+    for k, v in win_count_by_player_class.items():
+        print(f"Player {k} won {v} games")
+    
     
