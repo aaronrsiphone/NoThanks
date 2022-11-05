@@ -61,6 +61,7 @@ class Player:
     @property 
     def state(self):
         d = {
+            "index" : self.player_number,
             "hand": self.hand.copy(),
             "tokens" : self.tokens,
             "score" : self.score,
@@ -161,6 +162,65 @@ class Net_score(Basic_math):
             return True
 
         return False
+
+class AaronsRules(Player):
+
+    def __init__(self, 
+                player_number, 
+                auto_take_threshold=5,
+                general_threshold=5):
+
+        super().__init__(player_number)
+        self.auto_take_threshold = auto_take_threshold
+        self.general_threshold = general_threshold
+        
+
+    def will_make_sequence(self, c, hand=None):
+
+        if not hand:
+            hand = self.hand
+        return (c - 1) in hand or (c + 1) in hand
+
+    def decide(self, state):
+         # Returning -1 is Nothanks
+        # Returning 1 is to take.
+        
+        # if you dont have any tokes, take it
+        if self.tokens == 0:
+            return 1
+
+        card = state['flipped_card']
+        if card < self.auto_take_threshold:
+            return 1
+        
+        valuable = self.will_make_sequence(card)
+        valuable_to_others = False
+        
+        for p in state['player_states']:
+            if p['index'] != self.player_number:
+                if self.will_make_sequence(card, p['hand']):
+                    valuable_to_others = True
+
+        number_of_players = len(state["player_states"])
+        let_it_ride_token_max = 2*number_of_players
+
+        if valuable:
+            # if valuable to you and others, take it first. 
+            if valuable_to_others:
+                return 1
+            # if there is a risk others will take it on the next go around, take it early
+            if card - state['tokens_on_card'] - number_of_players < self.general_threshold:
+                return 1
+            else:
+                # if valuable only to you, let it ride twice. 
+                if state['tokens_on_card'] >= let_it_ride_token_max:
+                    return 1
+        # If value of card minus n tokens on card is less than a threshold, take it.
+        elif card - state['tokens_on_card'] < self.general_threshold:
+            return 1
+
+        return -1
+
     
 class Deck:
     """
@@ -261,17 +321,28 @@ class Game:
 
     def play_game(self):
         while self.deck.has_cards:
+            for p in self.players:
+                print(p)
             self.player_action()
+            print(self.deck.deck)
+        
+        player_scores = [(p.player_number, p.score) for p in game.players]
+        player_scores.sort(key=lambda x : x[1])
+        
+        return player_scores[0][0]
 
 if __name__ == '__main__':
     
-    p1 = Denier(1)
-    p2 = Basic_math(2, 10)
-    p3 = Net_score(3, 3)
+    p1 = Denier(0)
+    p2 = Basic_math(1, 10)
+    p3 = Net_score(2, 3)
+    p4 = AaronsRules(3, 5,5)
 
-    game = Game(players=[p1, p2, p3])
-    winner = game.play_game()
-    for p in game.players:
-        print(p)
-    game_state = game.state
+    winners = [0,0,0,0]
+    for _ in range(1):
+        game = Game(players=[p1, p2, p3,p4])
+        winner = game.play_game()
+        winners[winner] += 1
+    
+    print(winners)
     
