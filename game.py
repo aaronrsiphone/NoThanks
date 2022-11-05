@@ -80,6 +80,25 @@ class Player:
             return false
         return true
 
+    def test_card(self, card):
+        """
+        Function to test a card and decide what the impact on 
+        the score would be
+        """
+        # Save the state of the hand
+        old_hand = self.hand.copy()
+        # Save the current score
+        old_score = self.score
+        # Temporarily add the card to the hand
+        self.hand.append(card)
+        # Calculate a new score
+        new_score = self.score
+        # Return the hand to the state before the test card was added
+        self.hand = old_hand
+
+        # Return the difference in score
+        return new_score - old_score
+
 class Human(Player):
     """
     This Player allows a human to play against the computers
@@ -119,6 +138,26 @@ class Basic_math(Player):
         if self.tokens < 0:
             return True
         if state['flipped_card'] - state['tokens_on_card'] < self.threshold:
+            return True
+
+        return False
+
+class Net_score(Basic_math):
+    """
+    This player calculates what the net score impact would be of taking the card.
+
+    If the net score is less than the set threshold, then the card will be taken
+    """
+
+    def decide(self, state):
+        if self.tokens < 0:
+            return True
+        
+        card = state['flipped_card']
+        tokens = state['tokens_on_card']
+        score_delta = self.test_card(card) - tokens
+
+        if score_delta < self.threshold:
             return True
 
         return False
@@ -227,11 +266,10 @@ class Game:
 if __name__ == '__main__':
     
     p1 = Denier(1)
-    p2 = Denier(2)
-    p3 = Basic_math(3, 5)
-    p4 = Basic_math(4, 0)
+    p2 = Basic_math(2, 10)
+    p3 = Net_score(3, 3)
 
-    game = Game(players=[p1, p2, p3, p4])
+    game = Game(players=[p1, p2, p3])
     winner = game.play_game()
     for p in game.players:
         print(p)
