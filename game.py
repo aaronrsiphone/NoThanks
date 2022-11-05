@@ -2,49 +2,55 @@ import random
 from itertools import groupby
 from operator import itemgetter
 
-
-N_PLAYERS = 4
-
-
 class Player:
+    """
+    Base class for players in the game No Thanks.
 
-    def __init__(self, n_tokens, player_number):
+    This particular player makes decisions randomly, 
+    but new player strategies can be implementing the decide() function.
+    """
+
+    def __init__(self, player_number):
+        # set up empty hand
         self.hand = []
-        self.tokens = n_tokens
+        # store player number
         self.player_number = player_number
-        self.last_score = -1* n_tokens
 
     def __str__(self):
-
-        s = "Player: {}".format(self.player_number)
-        s += "  Tokens: {}".format(self.tokens)
-        s += "  Score: {}".format(self.calc_score())
-        for seq in self.get_sequences():
+        s = "player: {}".format(self.player_number)
+        s += "  tokens: {}".format(self.tokens)
+        s += "  score: {}".format(self.score)
+        s += " hand: "
+        for seq in self.sequences:
             s += " {}".format(seq)
 
         return s
 
-    def has_neighbor(c):
-        # checks if c will make a sequence with an existing card in hand. 
-        return (c - 1) in self.hand or (c + 1) in self.hand
+    @property
+    def score(self):
+        score = 0 
+        for seq in self.sequences:
+            score += seq[0]
 
-    def calc_score(self, test_card=None):
-        sequences = self.get_sequences(test_card)
-        score = 0
-        for s in sequences:
-            score += s[0]
         return score - self.tokens
-    
-    def add_card_and_tokens(self, card, tokens):
-        self.last_score = self.calc_score()
-        self.hand.append(card)
-        self.tokens += tokens
 
-    def get_sequences(self,c=None):
-        
-        test_hand = [h for h in self.hand]
-        if c:
-            test_hand.append(c)
+    @property 
+    def tokens(self):
+        return self._tokens
+
+    @tokens.setter
+    def tokens(self, new_tokens):
+        if new_tokens >= 0:
+            self._tokens = new_tokens
+        else:
+            raise valueerror("user cannot have have negative tokens")
+    
+    @property
+    def sequences(self):
+        """
+        Returns the hand sorted by sequences
+        """
+        test_hand = self.hand.copy()
         test_hand.sort()
         sequences = []
         for k, g in groupby(enumerate(test_hand), lambda i_x: i_x[0] - i_x[1]):
@@ -52,36 +58,133 @@ class Player:
 
         return sequences
 
-    def get_state(self):
-
-        state = {
+    @property 
+    def state(self):
+        d = {
             "hand": self.hand.copy(),
             "tokens" : self.tokens,
-            "score" : self.calc_score(),
-            "score_delta": self.calc_score() - self.last_score
+            "score" : self.score,
         }
-        return state
-    
-    def no_thanks():
-        if self.tokens > 0:
-            self.last_score = self.calc_score()
-            self.tokens -= 1
-        else:
-            raise ValueError("User cannot have have negative tokens")
+        return d
+
+    def decide(self, game_state):
+        """
+        Function to decide if the player should take the card
+
+        Return true to take the card
+
+        Return false to say "no thanks!"
+        """
+        n = random.randint(-1, 1)
+        if n < 0:
+            return false
+        return true
+
+    def test_card(self, card):
+        """
+        Function to test a card and decide what the impact on 
+        the score would be
+        """
+        # Save the state of the hand
+        old_hand = self.hand.copy()
+        # Save the current score
+        old_score = self.score
+        # Temporarily add the card to the hand
+        self.hand.append(card)
+        # Calculate a new score
+        new_score = self.score
+        # Return the hand to the state before the test card was added
+        self.hand = old_hand
+
+        # Return the difference in score
+        return new_score - old_score
+
+class Human(Player):
+    """
+    This Player allows a human to play against the computers
+    """
+    def decide(self, game_state):
+
+        print(game_state)
+        choice = input("Do you want to take the card?")
+        if choice.lower() in ["yes", "y", "true", "1"]:
+            return True
+        elif choice.lower() in ["no", "n", "false", "0"]:
+            return False
+
+class Denier(Player):
+    """
+    This player will always say "No Thanks" if able
+    """
+    def decide(self, _):
+        if self.tokens < 0:
+            return True
+
+        return False
+
+class Basic_math(Player):
+    """
+    This player inputs a threshold that is used to make a basic calculation.
+
+    If the value of the card minus the tokens on the card is less than a value
+    then the card will be taken
+    """
+
+    def __init__(self, player_number, threshold):
+        super().__init__(player_number)
+        self.threshold = threshold
+
+    def decide(self, state):
+        if self.tokens < 0:
+            return True
+        if state['flipped_card'] - state['tokens_on_card'] < self.threshold:
+            return True
+
+        return False
+
+class Net_score(Basic_math):
+    """
+    This player calculates what the net score impact would be of taking the card.
+
+    If the net score is less than the set threshold, then the card will be taken
+    """
+
+    def decide(self, state):
+        if self.tokens < 0:
+            return True
         
+        card = state['flipped_card']
+        tokens = state['tokens_on_card']
+        score_delta = self.test_card(card) - tokens
+
+        if score_delta < self.threshold:
+            return True
+
+        return False
     
 class Deck:
+    """
+    Class for the deck of cards in the game No Thanks
+    """
     def __init__(self):
+        # Create a deck with cards 3 through 35
         deck = list(range(3,36))
+        # Shuffle the Deck
         random.shuffle(deck)
+        # Discard the last nine cards
         self.deck = deck[:-9]
-        self.dropped = deck[-9:]
+        # Start out the card with 0 tokens
+        self.tokens = 0
+        # Make an array for cards that were all ready taken
         self.taken = []
 
-        self.tokens = 0
-    
-    def get_flipped(self):
-        if self.has_cards():
+    @property
+    def has_cards(self):
+        return len(self.deck) > 0
+
+    @property
+    def flipped_card(self):
+        if self.has_cards:
             return self.deck[-1]
         else:
             return 0
@@ -89,86 +192,86 @@ class Deck:
     def take_card(self):
         tokens = self.tokens
         card = self.deck.pop()
-
         self.tokens = 0
         self.taken.append(card)
         return (card, tokens)
-
-    def has_cards(self):
-        return len(self.deck) > 0
     
-    def no_thanks(self):
-        self.tokens += 1
-    
-
-
 class Game:
+    """
+    Class for the Game of No Thanks, contains all of the rules and actions
+    """
 
-    def __init__(self, n_players=4):
-
-        # Player Setup
-        if 3 > n_players > 7:
-            return Error("Player count must be between 3 and 7 inclusive. You provided {}".format(n_players))
-        
-        self.n_players = n_players
-        self.players = []
-        ptot = {
-            3:11,
-            4:11,
-            5:11,
-            6:9,
-            7:7
-        }
-
-        for i in range(0, self.n_players):
-            self.players.append(Player(ptot[n_players], i))
-        
-        # deck setup
+    def __init__(self, players=[]):
+        # Make a list of all the players
+        self.players = players
+        # Count the number of players
+        self.n_players = len(self.players)
+        # Deck setup
         self.deck = Deck()
-        self.current_player_index = 0
+        # Set up Turn Counter
         self.turn_counter = 0
 
-        self.game_log = []
-
-    def get_turn_index(self):
+        # Deal tokens to all the players
+        n_tokens = {3:11, 4:11, 5:11, 6:9, 7:7}
+        for player in self.players:
+            player.tokens = n_tokens[self.n_players]
+                
+    @property
+    def turn(self):
         return self.turn_counter%self.n_players
 
-    def get_state(self):
-        player_scores = [(p.player_number, p.calc_score()) for p in self.players]
-        player_scores.sort(key=lambda x : x[1])
-
-        state = {
-            "flipped_card" : self.deck.get_flipped(),
+    @property
+    def state(self):
+        d = {
+            "flipped_card" : self.deck.flipped_card,
             "tokens_on_card": self.deck.tokens,
-            "player_states" : [p.get_state() for p in self.players],
-            "player_positions" : [p[0] for p in player_scores],
-            "player_turn_index" : self.get_turn_index()
+            "player_states" : [p.state for p in self.players],
+            "player_turn_index" : self.turn
         }
-        return state
+        return d
     
-    def player_action(self, choice):
-        player = self.players[self.get_turn_index()]
-        old_score = player.calc_score()
-        if choice >= 0:
+    def player_action(self):
+        """
+        Function to allow the player to take an action
+
+        Parameters
+        ----------
+        choice: Boolean
+            If True, the player takes the card.
+            If False, the player says "No Thanks!"
+        """
+
+        # Get the player whose turn it is
+        player = self.players[self.turn]
+
+        # Ask the player what they want to do
+        choice = player.decide(self.state)
+
+        # The player decides to take the card,
+        # or is forced to because they don't have any tokens
+        if choice or (player.tokens == 0):
             card, tokens = self.deck.take_card()
-            player.add_card_and_tokens(card, tokens)
+            player.hand.append(card)
+            player.tokens += tokens
+        # The player says "No Thanks!"
         else:
             player.tokens -= 1
-            self.deck.no_thanks()
-            self.turn_counter +=1
-        new_score = player.calc_score()
-        return old_score - new_score
+            self.deck.tokens += 1
+            self.turn_counter += 1
 
-    def play_random_game(self):
-        while self.deck.has_cards():
-            n = random.randint(-1, 1)
-            self.player_action(n)
+    def play_game(self):
+        while self.deck.has_cards:
+            self.player_action()
 
 if __name__ == '__main__':
-    input("Ready?")
-    game = Game(N_PLAYERS)
-    winner = game.play_random_game()
+    
+    p1 = Denier(1)
+    p2 = Basic_math(2, 10)
+    p3 = Net_score(3, 3)
+
+    game = Game(players=[p1, p2, p3])
+    winner = game.play_game()
     for p in game.players:
         print(p)
-    game_state = game.get_state()
+    game_state = game.state
     
