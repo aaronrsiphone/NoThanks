@@ -2,51 +2,76 @@ from game import Game
 from players import *
 
 import random
+import itertools
+from multiprocessing import Pool, freeze_support
 
-mine = "LetItRider"
-
-win_count_by_player_class = {}
-winners = [0,0,0,0,0]
-class_scores = {}
-n_runs = 1000
-
-for index in range(n_runs):
-
-    # if (index+1)%100 == 0:
-        # print(index)
-        # print(win_count_by_player_class)
-        
-    # Players were optimized by parameter sweep
-    players = [
-        AaronsRules(12,16), # Optimized to be 12, 16
-        NetScore(12), # Optimized to be 12 
-        BasicMath(12), # Optimized to be 12
-        LetItRider(24,14), # Optimized to be 24, 14
-        Denier()
-    ]
-
-    random.shuffle(players)
-    game = Game(players=players)
-    winner = game.play_game()
+def run(player_class, player_class_args, other_player_classes_and_params, n_runs, shuffle=True):
     
-    winning_class = winner.__class__.__name__
-    winners[winner.player_number] +=1
-    if winning_class in win_count_by_player_class:
+    win_count_by_player_class = {player_class.__name__ : 0}
+    for p in other_player_classes_and_params:
+        win_count_by_player_class[p[0].__name__] = 0
+
+    for index in range(n_runs):
+        players = [p[0](*p[1]) for p in other_player_classes_and_params]
+        players.append(player_class(*player_class_args))
+        if shuffle:
+            random.shuffle(players)
+        
+        game = Game(players=players)
+        winner = game.play_game()
+        
+        winning_class = winner.__class__.__name__
+
         win_count_by_player_class[winning_class] += 1
-    else:
-        win_count_by_player_class[winning_class] = 1
+    
+    for k, v in win_count_by_player_class.items():
+        win_count_by_player_class[k] = v/n_runs
+    
+    return {"params" : player_class_args,
+            "scores" : win_count_by_player_class}
 
-    for player in players:
-        if player.__class__.__name__ not in class_scores:
-            class_scores[player.__class__.__name__] = 0
-        class_scores[player.__class__.__name__] += player.score
 
-for k, v in class_scores.items():
-    mean = v/n_runs
-    print(k, mean, win_count_by_player_class[k])
-        # for k, v in win_count_by_player_class.items():
-        #     print(f"{k} won {v} games")
-        # print(winners)
+def test_player(player_class, parameter_ranges, other_player_classes_and_params, n_runs, threads=16, shuffle=True):
+    """
+    Given a player class to test,
+          a list of parameter ranges as tuples,
+          a list of other player classes and instantiation parameters,
+          and number of runs
+
+    Returns an array of dictionaries with the probability of each player winning for each parameter set passed to the player class under test.
+
+    Example: This will instantiate LetItRider with all combinations args. First arg being between 5 and 29 and second arg being between 10 and 15. 
+            Running 5000 games with each parametric combination. 
+    .. 
+    >>> others = [
+        (BasicMath,   (12,)),
+        (NetScore,    (12,)),
+        (AaronsRules, (12,16)),
+       ]
+    >>> results = scratch.test_player(LetItRider, [(5,29),(10,15)], others, 5000)
+    >>> print(result[0])
+    [{'params': (5, 10), 'scores': {'LetItRider': 0.76, 'NetScore': 0.12, 'AaronsRules': 0.12}},
+    """
+    test_class_name = player_class.__name__
+    parameter_sets =  itertools.product(*[range(p[0], p[1]) for p in parameter_ranges])
+
+    map_params = []
+    for ps in parameter_sets:
+        map_params.append([player_class, ps, other_player_classes_and_params,n_runs,shuffle])
+
+    with Pool(threads) as p:
+        results = p.starmap(run, map_params)
+    
+    return results
+
+
+# for k, v in class_scores.items():
+#     mean = v/n_runs
+#     print(k, mean, win_count_by_player_class[k])
+
+# for k, v in win_count_by_player_class.items():
+#     print(f"{k} won {v} games")
+# print(winners)
             
 # BasicMath(12) position Bias
 # [25967, 24700, 24067, 25266]
