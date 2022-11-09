@@ -43,6 +43,8 @@ def test_player(player_class, parameter_ranges, other_player_classes_and_params,
     Example: This will instantiate LetItRider with all combinations args. First arg being between 5 and 29 and second arg being between 10 and 15. 
             Running 5000 games with each parametric combination. 
     .. 
+    >>> from players import *
+    >>> import scratch
     >>> others = [
         (BasicMath,   (12,)),
         (NetScore,    (12,)),
