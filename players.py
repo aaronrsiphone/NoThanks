@@ -272,7 +272,7 @@ class LetItRider(Player):
         
         return False
 
-class SmartLetItRider():
+class SmartLetItRider(Player):
 
     """ 
     This player takes a high card with many tokens as its first card and
@@ -313,11 +313,8 @@ class SmartLetItRider():
                 return True
         
         # Low Tokens
-        if self.tokens < self.lt_token_threshold:
+        if self.tokens < self.lt_tokens_threshold:
             if card < self.lt_card_threshold and tokens_on_card > self.lt_card_tokens_threshold:
                 return True
 
         return False
-
-if __name__ == "__main__":
-    pass

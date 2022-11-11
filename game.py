@@ -44,7 +44,7 @@ class Game:
         # Make a list of all the players
         
         self.players = players
-        self.verbose = True
+        self.verbose = verbose
         for i in range(len(players)):
             self.players[i].assign_position(i)
 
