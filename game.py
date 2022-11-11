@@ -1,5 +1,5 @@
 import random
-
+import time
     
 class Deck:
     """
@@ -40,10 +40,11 @@ class Game:
     Class for the Game of No Thanks, contains all of the rules and actions
     """
 
-    def __init__(self, players=[]):
+    def __init__(self, players=[], verbose=False):
         # Make a list of all the players
         
         self.players = players
+        self.verbose = True
         for i in range(len(players)):
             self.players[i].assign_position(i)
 
@@ -84,20 +85,36 @@ class Game:
             If False, the player says "No Thanks!"
         """
 
+  
         # Get the player whose turn it is
         player = self.players[self.turn]
 
+        if self.verbose:
+            time.sleep(1)
+            print(f"It's Player {self.turn}'s Turn")
+            print(f"  The flipped card is {self.deck.flipped_card} and it's got {self.deck.tokens} tokens")
+            print(f"  Player {self.turn}'s hand is {player.hand}")
+
         # Ask the player what they want to do
         choice = player.decide(self.state)
-
         # The player decides to take the card,
         # or is forced to because they don't have any tokens
         if choice or (player.tokens == 0):
+
+            if self.verbose:
+                if not choice:
+                    print(f"  Player {self.turn} is out of tokens")
+                print(f"  Player {self.turn} chooses to take the card")
+
             card, tokens = self.deck.take_card()
             player.hand.append(card)
+            player.hand.sort()
             player.tokens += tokens
         # The player says "No Thanks!"
         else:
+            if self.verbose:
+                print(f"  Player {self.turn} says NoThanks!! and skips the card.")
+
             player.tokens -= 1
             self.deck.tokens += 1
             self.turn_counter += 1
