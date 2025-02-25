@@ -1,5 +1,6 @@
 from itertools import groupby
 from operator import itemgetter
+import random
 
 class Player:
     """
@@ -20,6 +21,7 @@ class Player:
 
     def __str__(self):
         s = "player: {}".format(self.player_number)
+        s += "  type: {}".format(type(self))
         s += "  tokens: {}".format(self.tokens)
         s += "  score: {}".format(self.score)
         s += " hand: "
@@ -27,6 +29,7 @@ class Player:
             s += " {}".format(seq)
 
         return s
+    
 
     @property
     def score(self):
@@ -64,7 +67,7 @@ class Player:
     def state(self):
         d = {
             "index" : self.player_number,
-            "hand": self.hand.copy(),
+            "hand": sorted(self.hand.copy()),
             "tokens" : self.tokens,
             "score" : self.score,
         }
@@ -80,8 +83,8 @@ class Player:
         """
         n = random.randint(-1, 1)
         if n < 0:
-            return false
-        return true
+            return False
+        return True
 
     def test_card(self, card):
         """
@@ -108,7 +111,12 @@ class Human(Player):
     """
     def decide(self, game_state):
 
-        print(game_state)
+        print(f"Its Your turn Player {self.player_number}")
+        print(f"You have {self.tokens}")
+        
+        for ps in game_state['player_states'][self.player_number+1:] + game_state['player_states'][:self.player_number]:
+            print(f"{ps['index']} hand is {sorted(ps['hand'])}")
+
         choice = input("Do you want to take the card?")
         if choice.lower() in ["yes", "y", "true", "1"]:
             return True
@@ -262,4 +270,51 @@ class LetItRider(Player):
             if valuable and tokens_on_card > self.tokens_threshold:
                 return True
         
+        return False
+
+class SmartLetItRider(Player):
+
+    """ 
+    This player takes a high card with many tokens as its first card and
+    only takes cards that complement its hand sequentially once the number
+    of tokens on said card meets a token threshold
+    """
+
+    def __init__(self, card_threshold=20, card_tokens_threshold=13, valuable_token_threshold=13, lt_card_threshold=20, lt_card_tokens_threshold=13, lt_tokens_threshold=0):
+        super().__init__()
+        self.card_threshold = card_threshold
+        self.card_tokens_threshold = card_tokens_threshold
+        self.valuable_token_threshold = valuable_token_threshold
+        self.lt_card_threshold = lt_card_threshold
+        self.lt_card_tokens_threshold = lt_card_tokens_threshold
+        self.lt_tokens_threshold = lt_tokens_threshold
+
+    def will_make_sequence(self, c, hand=None):
+
+        if not hand:
+            hand = self.hand
+        one = (c - 1) in hand
+        two = (c + 1) in hand
+        return  one or two
+
+    def decide(self, state):
+        # Returning True is take
+        # Returning False is pass
+        
+        card = state['flipped_card']
+        tokens_on_card = state['tokens_on_card']
+
+        if len(self.hand) == 0:
+            if card >= self.card_threshold and tokens_on_card > self.card_tokens_threshold:
+                return True
+        else:
+            valuable = self.will_make_sequence(card)
+            if valuable and tokens_on_card > self.valuable_token_threshold:
+                return True
+        
+        # Low Tokens
+        if self.tokens < self.lt_tokens_threshold:
+            if card < self.lt_card_threshold and tokens_on_card > self.lt_card_tokens_threshold:
+                return True
+
         return False

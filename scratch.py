@@ -31,7 +31,7 @@ def run(player_class, player_class_args, other_player_classes_and_params, n_runs
             "scores" : win_count_by_player_class}
 
 
-def test_player(player_class, parameter_ranges, other_player_classes_and_params, n_runs, threads=16, shuffle=True):
+def test_player(player_class, parameter_ranges, other_player_classes_and_params, n_runs, threads=4, shuffle=True):
     """
     Given a player class to test,
           a list of parameter ranges as tuples,
@@ -54,7 +54,6 @@ def test_player(player_class, parameter_ranges, other_player_classes_and_params,
     >>> print(result[0])
     [{'params': (5, 10), 'scores': {'LetItRider': 0.76, 'NetScore': 0.12, 'AaronsRules': 0.12}},
     """
-    test_class_name = player_class.__name__
     parameter_sets =  itertools.product(*[range(p[0], p[1]) for p in parameter_ranges])
 
     map_params = []
@@ -65,6 +64,19 @@ def test_player(player_class, parameter_ranges, other_player_classes_and_params,
         results = p.starmap(run, map_params)
     
     return results
+
+
+if __name__ == "__main__":
+    others = [
+        (LetItRider,   (20,13)),
+        (NetScore,    (12,)),
+        (AaronsRules, (12,16)),
+       ]
+
+    results = test_player(SmartLetItRider, [(17,23),(10,15),(3,15),(0,15),(0,5)], others, 10)
+    results.sort(key=lambda r:r['scores']['SmartLetItRider'])
+    for r in results[-10:]:
+        print(r)
 
 
 # for k, v in class_scores.items():
